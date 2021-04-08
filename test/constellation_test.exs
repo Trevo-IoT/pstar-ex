@@ -5,51 +5,81 @@ defmodule PStar.ConstellationTest do
   @star_name "hello"
 
   setup do
-    constallation = start_supervised!(PStar.Constellation)
-    %{constallation: constallation}
+    constellation = start_supervised!(PStar.Constellation)
+    %{constellation: constellation}
   end
 
-  test "new star", %{constallation: constallation} do
+  test "new star", %{constellation: constellation} do
     center = :c.pid(0, 50, 0)
-    :ok = constallation |> PStar.Constellation.new(@star_name, center)
+    :ok = constellation |> PStar.Constellation.new(@star_name, center)
   end
 
-  test "del star", %{constallation: constallation} do
+  test "double star", %{constellation: constellation} do
     center = :c.pid(0, 50, 0)
-    :ok = constallation |> PStar.Constellation.new(@star_name, center)
-    :ok = constallation |> PStar.Constellation.del(@star_name)
+    :ok = constellation |> PStar.Constellation.new(@star_name, center)
+    :error = constellation |> PStar.Constellation.new(@star_name, center)
   end
 
-  test "get center", %{constallation: constallation} do
+  test "del star", %{constellation: constellation} do
+    center = :c.pid(0, 50, 0)
+    :ok = constellation |> PStar.Constellation.new(@star_name, center)
+    :ok = constellation |> PStar.Constellation.del(@star_name)
+  end
+
+  test "del non-existent star", %{constellation: constellation} do
+    :error = constellation |> PStar.Constellation.del(@star_name)
+  end
+
+  test "get center", %{constellation: constellation} do
     exp_center = :c.pid(0, 50, 0)
-    :ok = constallation |> PStar.Constellation.new(@star_name, exp_center)
-    {:ok, center} = constallation |> PStar.Constellation.center(@star_name)
+    :ok = constellation |> PStar.Constellation.new(@star_name, exp_center)
+    {:ok, center} = constellation |> PStar.Constellation.center(@star_name)
     assert exp_center == center
   end
 
-  test "new edge", %{constallation: constallation} do
+  test "new edge", %{constellation: constellation} do
     center = :c.pid(0, 50, 0)
     edge = :c.pid(0, 51, 0)
-    :ok = constallation |> PStar.Constellation.new(@star_name, center)
-    :ok = constallation |> PStar.Constellation.new_edge(@star_name, edge)
+    :ok = constellation |> PStar.Constellation.new(@star_name, center)
+    :ok = constellation |> PStar.Constellation.new_edge(@star_name, edge)
   end
 
-  test "del edge", %{constallation: constallation} do
+  test "del edge", %{constellation: constellation} do
     center = :c.pid(0, 50, 0)
     edge = :c.pid(0, 51, 0)
-    :ok = constallation |> PStar.Constellation.new(@star_name, center)
-    :ok = constallation |> PStar.Constellation.new_edge(@star_name, edge)
-    :ok = constallation |> PStar.Constellation.del_edge(@star_name, edge)
+    :ok = constellation |> PStar.Constellation.new(@star_name, center)
+    :ok = constellation |> PStar.Constellation.new_edge(@star_name, edge)
+    :ok = constellation |> PStar.Constellation.del_edge(@star_name, edge)
   end
 
-  test "get edges", %{constallation: constallation} do
+  test "del non-existent edge", %{constellation: constellation} do
+    center = :c.pid(0, 50, 0)
+    edge = :c.pid(0, 51, 0)
+    other_edge = :c.pid(0, 52, 0)
+    :ok = constellation |> PStar.Constellation.new(@star_name, center)
+    :ok = constellation |> PStar.Constellation.new_edge(@star_name, edge)
+    :error = constellation |> PStar.Constellation.del_edge(@star_name, other_edge)
+  end
+
+  test "get edges", %{constellation: constellation} do
     center = :c.pid(0, 50, 0)
     exp_edges = [:c.pid(0, 51, 0), :c.pid(0, 52, 0), :c.pid(0, 53, 0)]
-    :ok = constallation |> PStar.Constellation.new(@star_name, center)
-    exp_edges |> Enum.each(fn e -> PStar.Constellation.new_edge(constallation, @star_name, e) end)
+    :ok = constellation |> PStar.Constellation.new(@star_name, center)
+    exp_edges |> Enum.each(fn e -> PStar.Constellation.new_edge(constellation, @star_name, e) end)
 
-    {:ok, edges} = constallation |> PStar.Constellation.edges(@star_name)
+    {:ok, edges} = constellation |> PStar.Constellation.edges(@star_name)
 
     assert exp_edges == edges |> Enum.reverse
+  end
+
+  test "get infos without new", %{constellation: constellation} do
+    :error = constellation |> PStar.Constellation.center(@star_name)
+    :error = constellation |> PStar.Constellation.edges(@star_name)
+  end
+
+  test "set infos without new", %{constellation: constellation} do
+    edge = :c.pid(0, 51, 0)
+    :error = constellation |> PStar.Constellation.new_edge(@star_name, edge)
+    :error = constellation |> PStar.Constellation.del_edge(@star_name, edge)
   end
 end
